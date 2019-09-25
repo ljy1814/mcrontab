@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"os/exec"
 	"time"
@@ -26,8 +27,17 @@ type ExecResult struct {
 	ScheduleTime time.Time
 }
 
+func (e ExecResult) String() string {
+	return fmt.Sprintf("{err:'%s',output:'%s',jobPlan:%s,startTime:'%s',endTime:'%s',scheduleTime:'%s'}",
+		e.Err, e.Output, e.JobPlan,
+		GetTimeString(e.StartTime),
+		GetTimeString(e.EndTime),
+		GetTimeString(e.ScheduleTime),
+	)
+}
+
 func (e *Executor) ExecJob(plan *SchedulePlan) error {
-	return nil
+	return e.execJob(plan)
 }
 
 func (e *Executor) execJob(plan *SchedulePlan) error {

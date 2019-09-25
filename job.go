@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -16,15 +17,24 @@ type Job struct {
 	CronExpr string `json:"cronExpr"`
 }
 
+func (j Job) String() string {
+	return fmt.Sprintf("{name:'%s',command:'%s',cronExpr:'%s'}", j.Name, j.Command, j.CronExpr)
+}
+
 func UnpackJob(val []byte) (ret *Job, err error) {
 	ret = &Job{}
 	err = json.Unmarshal(val, ret)
 	return
 }
 
+// job事件
 type JobEvent struct {
 	Type int
 	Job  *Job
+}
+
+func (j JobEvent) String() string {
+	return fmt.Sprintf("{type:%d,job:%s}", j.Type, j.Job)
 }
 
 func BuildEvent(eventType int, job *Job) *JobEvent {
@@ -34,12 +44,17 @@ func BuildEvent(eventType int, job *Job) *JobEvent {
 	}
 }
 
+// 任务执行计划
 type JobSchedulePlan struct {
 	Job        *Job
 	Expr       *cronexpr.Expression // 解析好的表达式
 	NextTime   time.Time            //下次执行时间
 	ctx        context.Context
 	cancelFunc context.CancelFunc
+}
+
+func (j JobSchedulePlan) String() string {
+	return fmt.Sprintf("{job:%s,nextTime:%s}", j.Job, GetTimeString(j.NextTime))
 }
 
 type JobMgr struct {
@@ -167,6 +182,41 @@ func (jm *JobMgr) KillJob(ctx context.Context, key string) error {
 	if err != nil {
 		logrus.Errorf("%s Put key:%s err:%v", fun, key, err)
 	}
+
+	return err
+}
+
+func (jm *JobMgr) WatchJobs(ctx context.Context, key string) error {
+	fun := "JobMgr.WatchJobs -->"
+
+	getResp, err := jm.client.Get(ctx, key, clientv3.WithPrefix())
+	if err != nil {
+		logrus.Errorf("%s Get key:%s err:%v", fun, key, err)
+		return err
+	}
+
+	// 初始化或者重启
+	for _, v := range getResp.Kvs {
+		logrus.Debugf("%s kv:%+v", fun, v)
+		job := &Job{}
+		err = json.Unmarshal(v.Value, job)
+		if err != nil {
+			logrus.Warnf("%s Unmarshal key:%s value:%s err:%v", fun, key, v.Value, err)
+			continue
+		}
+
+		jobEvent := &JobEvent{
+			Type: JOB_EVENT_SAVE,
+			Job:  job,
+		}
+
+		// job量大 阻塞
+		go GScheduler.Push(jobEvent)
+	}
+
+	go func() {
+
+	}()
 
 	return err
 }

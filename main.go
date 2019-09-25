@@ -13,6 +13,8 @@ func main() {
 	initHttpServer()
 	initEtcd()
 	initJobMgr()
+	initExecutor()
+
 	logrus.Infof("init ok...")
 	GJobMgr.Put(context.Background(), "/jobs", "jobtest")
 	logrus.Info("------")

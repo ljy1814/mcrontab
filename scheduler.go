@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -15,6 +16,7 @@ type Scheduler struct {
 	jobEventPlanMap map[string]*SchedulePlan
 	// 正在执行的job表
 	jobExecMap map[string]*SchedulePlan
+	lock       *sync.Mutex
 }
 
 func (s *Scheduler) scheduleLoop() {
@@ -27,11 +29,13 @@ func (s *Scheduler) scheduleLoop() {
 		case v := <-s.jobEventChan:
 			logrus.Info(v)
 			// 任务更新
+			s.handle(context.Background(), v)
 		case <-schedulerTimer.C:
 			// 休眠结束
 		case result := <-GExecutor.ScheduleResultChan:
 			// 任务执行完毕
-			logrus.Info(result)
+			//logrus.Info(result)
+			s.processScheduleResult(result)
 		}
 
 		timeAfter = s.trySchedule()
@@ -75,7 +79,75 @@ func (s *Scheduler) tryStartJob(plan *SchedulePlan) {
 
 	// 加入执行表
 	s.jobExecMap[plan.Job.Name] = plan
+	GExecutor.ExecJob(plan)
+}
 
+func (s *Scheduler) handle(ctx context.Context, je *JobEvent) {
+	var (
+		fun = "Scheduler.handle -->"
+	)
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	switch je.Type {
+	case JOB_EVENT_SAVE:
+		logrus.Infof("%s SAVE job:%s", fun, je)
+		jobSchedulePlan, err := buildJobSchedulePlan(ctx, je.Job)
+		if err != nil {
+			logrus.Errorf("%s buildJobSchedulePlan ctx:%v job:%s err:%v", fun, ctx, je, err)
+			return
+		}
+		s.jobEventPlanMap[je.Job.Name] = jobSchedulePlan
+
+	case JOB_EVENT_DELETE:
+		logrus.Infof("%s DELETE job:%s", fun, je)
+		if _, ok := s.jobEventPlanMap[je.Job.Name]; ok {
+			delete(s.jobEventPlanMap, je.Job.Name)
+		}
+
+	case JOB_EVENT_KILL:
+		jobSchedulePlan, ok := s.jobExecMap[je.Job.Name]
+		if !ok {
+			return
+		}
+
+		logrus.Infof("%s KILL job:%s", fun, je)
+		jobSchedulePlan.cancelFunc()
+		// 重置强杀的任务
+		jobSchedulePlan.ctx, jobSchedulePlan.cancelFunc = context.WithCancel(ctx)
+	}
+}
+
+func (s *Scheduler) processScheduleResult(result *ExecResult) {
+	fun := "Scheduler.processScheduleResult -->"
+
+	s.lock.Lock()
+	delete(s.jobExecMap, result.JobPlan.Job.Name)
+	s.lock.Unlock()
+
+	time.Sleep(20 * time.Millisecond)
+	logrus.Infof("%s result:%s", fun, result)
+
+	// TODO 记录日志
+}
+
+func buildJobSchedulePlan(ctx context.Context, job *Job) (*SchedulePlan, error) {
+	fun := "buildJobSchedulePlan -->"
+	expr, err := cronexpr.Parse(job.CronExpr)
+	if err != nil {
+		logrus.Warnf("%s ctx:%v cronexpr Parse job:%s err:%v", fun, ctx, job, err)
+		return nil, err
+	}
+
+	ctx1, cancelFunc := context.WithCancel(ctx)
+
+	return &SchedulePlan{
+		Job:        job,
+		Expr:       expr,
+		NextTime:   expr.Next(time.Now()),
+		ctx:        ctx1,
+		cancelFunc: cancelFunc,
+	}, err
 }
 
 var (
@@ -83,7 +155,14 @@ var (
 )
 
 func InitScheduler() (err error) {
-	GScheduler = &Scheduler{}
+	GScheduler = &Scheduler{
+		jobEventChan: make(chan *JobEvent, 1024),
+		// job执行计划表
+		jobEventPlanMap: make(map[string]*SchedulePlan),
+		// 正在执行的job表
+		jobExecMap: make(map[string]*SchedulePlan),
+		lock:       &sync.Mutex{},
+	}
 
 	go GScheduler.scheduleLoop()
 

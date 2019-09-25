@@ -9,3 +9,7 @@ const (
 func GetNowString() string {
 	return time.Now().Format(TimeFormat)
 }
+
+func GetTimeString(t time.Time) string {
+	return t.Format(TimeFormat)
+}

@@ -37,3 +37,9 @@ func initEtcd() {
 func initJobMgr() {
 	GJobMgr = &JobMgr{GClient}
 }
+
+func initExecutor() {
+	GExecutor = &Executor{
+		ScheduleResultChan: make(chan *ExecResult, 1024),
+	}
+}
