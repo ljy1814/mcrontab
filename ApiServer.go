@@ -44,7 +44,7 @@ func (hs *HttpServer) Init(port string) error {
 	logrus.Infof("%s start", fun)
 
 	router := httprouter.New()
-	router.POST("/", Index)
+	router.GET("/", Index)
 	hs.Port = port
 
 	//	hs.ServerMux = http.ewServeMux()
@@ -85,6 +85,7 @@ func (hs *HttpServer) Start() error {
 }
 
 func Index(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	w.Write([]byte("OK"))
+	logrus.Infof("Index .....req:%+v", r)
+	w.Write([]byte("OK\r\n"))
 	return
 }

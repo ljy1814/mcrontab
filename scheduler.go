@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -175,4 +176,8 @@ type SchedulePlan struct {
 	NextTime   time.Time
 	ctx        context.Context
 	cancelFunc context.CancelFunc
+}
+
+func (sp SchedulePlan) String() string {
+	return fmt.Sprintf("{job:'%s',nextTime:'%s'}", sp.Job, GetTimeString(sp.NextTime))
 }

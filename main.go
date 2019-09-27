@@ -14,6 +14,7 @@ func main() {
 	initEtcd()
 	initJobMgr()
 	initExecutor()
+	initWatcher()
 
 	logrus.Infof("init ok...")
 	GJobMgr.Put(context.Background(), "/jobs", "jobtest")

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"runtime"
 
 	"github.com/Sirupsen/logrus"
@@ -42,4 +43,14 @@ func initExecutor() {
 	GExecutor = &Executor{
 		ScheduleResultChan: make(chan *ExecResult, 1024),
 	}
+}
+
+func initWatcher() error {
+	e1 := GJobMgr.WatchJobs(context.Background(), JOB_PREFIX_PUT)
+	e2 := GJobMgr.WatchKillJobs(context.Background(), JOB_PREFIX_KILL)
+
+	if e1 != nil {
+		return e1
+	}
+	return e2
 }

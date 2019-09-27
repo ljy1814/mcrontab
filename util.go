@@ -13,3 +13,7 @@ func GetNowString() string {
 func GetTimeString(t time.Time) string {
 	return t.Format(TimeFormat)
 }
+
+func GetJobLockKey(name string) string {
+	return JOB_PREFIX_LOCK + name
+}

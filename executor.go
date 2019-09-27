@@ -28,7 +28,7 @@ type ExecResult struct {
 }
 
 func (e ExecResult) String() string {
-	return fmt.Sprintf("{err:'%s',output:'%s',jobPlan:%s,startTime:'%s',endTime:'%s',scheduleTime:'%s'}",
+	return fmt.Sprintf("{err:'%v',output:'%s',jobPlan:%s,startTime:'%s',endTime:'%s',scheduleTime:'%s'}",
 		e.Err, e.Output, e.JobPlan,
 		GetTimeString(e.StartTime),
 		GetTimeString(e.EndTime),
@@ -48,7 +48,7 @@ func (e *Executor) execJob(plan *SchedulePlan) error {
 	time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
 
 	ctx := context.Background()
-	err := jobLock.TryLock(ctx, "")
+	err := jobLock.TryLock(ctx, GetJobLockKey(plan.Job.Name))
 	defer jobLock.UnLock(ctx)
 
 	now := time.Now()
@@ -61,7 +61,7 @@ func (e *Executor) execJob(plan *SchedulePlan) error {
 	if err != nil {
 		logrus.Errorf("%s TryLock failed plan:%s err:%v", fun, plan, err)
 	} else {
-		logrus.Infof("%s TryLock successfully plan:%s err:%v", fun, plan, err)
+		logrus.Infof("%s TryLock successfully plan:%s now:%s err:%v", fun, plan, GetNowString(), err)
 
 		cmd := exec.CommandContext(plan.ctx, "/bin/bash", "-c", plan.Job.Command)
 		output, err := cmd.CombinedOutput()

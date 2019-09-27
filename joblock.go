@@ -49,11 +49,14 @@ func (j *JobLock) TryLock(ctx0 context.Context, key string) error {
 				if r == nil {
 					return
 				}
+				logrus.Infof("%s ||| resp:%+v", fun, r)
 			}
 		}
 	}()
 
 	txn := j.kv.Txn(ctx)
+	t1 := clientv3.CreateRevision(key)
+	logrus.Infof("%s ------ key:%s CreateRevision:%+v", fun, key, t1)
 	txn.If(clientv3.Compare(clientv3.CreateRevision(key), "=", 0)).
 		Then(clientv3.OpPut(key, "", clientv3.WithLease(leaseId))).
 		Else(clientv3.OpGet(key))
@@ -63,7 +66,7 @@ func (j *JobLock) TryLock(ctx0 context.Context, key string) error {
 		logrus.Errorf("%s Lease txn commit key:%s err:%v", fun, key, err)
 		return err
 	}
-
+	logrus.Infof("%s Commit key:%s txnResp:%+v err:%v", fun, key, txnResp, err)
 	if !txnResp.Succeeded {
 		err = errors.New("Lock already get by others")
 		return err

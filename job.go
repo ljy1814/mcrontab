@@ -9,6 +9,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/gorhill/cronexpr"
 	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/mvcc/mvccpb"
 )
 
 type Job struct {
@@ -186,14 +187,18 @@ func (jm *JobMgr) KillJob(ctx context.Context, key string) error {
 	return err
 }
 
-func (jm *JobMgr) WatchJobs(ctx context.Context, key string) error {
-	fun := "JobMgr.WatchJobs -->"
+func (jm *JobMgr) initJobsByType(ctx context.Context, key string, typ int) (int64, error) {
+	var (
+		fun          = "JobMgr.initJobsByType -->"
+		watchVersion int64
+	)
 
 	getResp, err := jm.client.Get(ctx, key, clientv3.WithPrefix())
 	if err != nil {
 		logrus.Errorf("%s Get key:%s err:%v", fun, key, err)
-		return err
+		return watchVersion, err
 	}
+	watchVersion = getResp.Header.Revision + 1
 
 	// 初始化或者重启
 	for _, v := range getResp.Kvs {
@@ -206,21 +211,87 @@ func (jm *JobMgr) WatchJobs(ctx context.Context, key string) error {
 		}
 
 		jobEvent := &JobEvent{
-			Type: JOB_EVENT_SAVE,
+			Type: typ,
 			Job:  job,
 		}
 
 		// job量大 阻塞
 		go GScheduler.Push(jobEvent)
 	}
+	// 后面错误不报
+	return watchVersion, nil
+}
+
+func (jm *JobMgr) WatchJobs(ctx context.Context, key string) error {
+	fun := "JobMgr.WatchJobs -->"
+	watchVersion, err := jm.initJobsByType(ctx, key, JOB_EVENT_SAVE)
+	if err != nil {
+		return err
+	}
+
+	go func(watchVersion int64) {
+		watchChan := jm.client.Watch(ctx, key,
+			clientv3.WithRev(watchVersion),
+			clientv3.WithPrefix(),
+		)
+
+		for resp := range watchChan {
+			for _, res := range resp.Events {
+				logrus.Infof("%s Event res:%+v", fun, res)
+				switch res.Type {
+				case mvccpb.PUT:
+					job := &Job{}
+					err := json.Unmarshal(res.Kv.Value, job)
+					if err != nil {
+						logrus.Warnf("%s Unmarshal key:%s value:%s err:%v", fun, key, res.Kv.Value, err)
+						continue
+					}
+
+					je := &JobEvent{
+						Type: JOB_EVENT_SAVE,
+						Job:  job,
+					}
+					go GScheduler.Push(je)
+				case mvccpb.DELETE:
+					logrus.Infof("%s DELETE key:%s value:%s", fun, key, res.Kv.Key)
+				}
+			}
+		}
+	}(watchVersion)
+
+	return err
+}
+
+func (jm *JobMgr) WatchKillJobs(ctx context.Context, key string) error {
+	fun := "JobMgr.WatchKillJobs -->"
+	_, err := jm.initJobsByType(ctx, key, JOB_EVENT_DELETE)
+	if err != nil {
+		return err
+	}
 
 	go func() {
+		watchChan := jm.client.Watch(ctx, key,
+			clientv3.WithPrefix(),
+		)
 
+		for resp := range watchChan {
+			for _, res := range resp.Events {
+				logrus.Infof("%s Event res:%+v", fun, res)
+				switch res.Type {
+				case mvccpb.PUT:
+				case mvccpb.DELETE:
+				}
+			}
+		}
 	}()
 
 	return err
 }
 
 func (jm *JobMgr) NewJobLock(key string) *JobLock {
-	return &JobLock{}
+	return &JobLock{
+		kv:      GClient.KV,
+		lease:   GClient.Lease,
+		jobName: key,
+	}
 }
