@@ -60,7 +60,7 @@ base64.b64encode('AA')
 
 etcdctl watch  /test/ok
 
-#如果监听子节点
+#### 如果监听子节点
 etcdctl watch  /test/ok --prefix
 
 etcdctl lease grant 40
@@ -78,3 +78,25 @@ lease 4e5e5b853f52892b keepalived with TTL(40)
 
 
 
+### 其它资源
+```
+https://github.com/soimort/you-get
+```
+
+```
+
+添加time_wait   close_wait连接数
+netstat -n | awk '/^tcp/ {++S[$NF]} END {for(a in S) print a, S[a]}'
+
+```
+
+```
+https://github.com/chai2010/advanced-go-programming-book/blob/master/ch1-basic/ch1-03-array-string-and-slice.md
+https://zboya.github.io/post/go_scheduler/
+https://www.shkuro.com/books/2019-mastering-distributed-tracing/
+```
+
+#### 虚拟内存
+```
+http://blog.coderhuo.tech/2017/10/12/Virtual_Memory_C_strings_proc/
+```
