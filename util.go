@@ -17,3 +17,7 @@ func GetTimeString(t time.Time) string {
 func GetJobLockKey(name string) string {
 	return JOB_PREFIX_LOCK + name
 }
+
+func GetJobCreateKey(name string) string {
+	return JOB_PREFIX_PUT + name
+}

@@ -83,6 +83,7 @@ func (jm *JobMgr) Get(ctx context.Context, key string) (string, error) {
 
 func (jm *JobMgr) Put(ctx context.Context, key, value string) (string, error) {
 	fun := "JobMgr.Put -->"
+	rs := ""
 
 	res, err := jm.client.Put(ctx, key, value, clientv3.WithPrevKV())
 	if err != nil {
@@ -97,8 +98,15 @@ func (jm *JobMgr) Put(ctx context.Context, key, value string) (string, error) {
 	}
 
 	// TODO 老数据处理
+	b, err := json.Marshal(res.PrevKv)
+	if err != nil {
+		logrus.Errorf("%s client put key:%s err:%v", fun, key, err)
+		return "", err
+	}
 
-	return "", nil
+	rs = string(b)
+
+	return rs, nil
 }
 
 func (jm *JobMgr) Delete(ctx context.Context, key string) (string, error) {
@@ -229,6 +237,7 @@ func (jm *JobMgr) WatchJobs(ctx context.Context, key string) error {
 		return err
 	}
 
+	logrus.Infof("%s watchVersion:%d", fun, watchVersion)
 	go func(watchVersion int64) {
 		watchChan := jm.client.Watch(ctx, key,
 			clientv3.WithRev(watchVersion),

@@ -7,7 +7,7 @@ const (
 )
 
 const (
-	JOB_PREFIX_PUT  = "/jobs/put"
+	JOB_PREFIX_PUT  = "/jobs/put/"
 	JOB_PREFIX_KILL = "/jobs/kill/"
 	JOB_PREFIX_LOCK = "/jobs/lock/"
 )

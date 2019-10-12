@@ -26,5 +26,6 @@ func main() {
 		GJobMgr.Put(context.Background(), "/jobs", fmt.Sprintf("jobtest:%d", i))
 	}
 	initSignal()
+	stopServer()
 	logrus.Info("server quit")
 }

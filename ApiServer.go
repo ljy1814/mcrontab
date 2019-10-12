@@ -1,6 +1,9 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"io/ioutil"
 	"net"
 	"os"
 	"runtime/debug"
@@ -42,11 +45,8 @@ func (hs *HttpServer) Init(port string) error {
 		fun = "HttpServer.Init -->"
 	)
 	logrus.Infof("%s start", fun)
-
-	router := httprouter.New()
-	router.GET("/", Index)
-	router.GET("/close", Close)
 	hs.Port = port
+	router := hs.initHandler()
 
 	//	hs.ServerMux = http.ewServeMux()
 	hs.Server = &http.Server{
@@ -55,6 +55,15 @@ func (hs *HttpServer) Init(port string) error {
 		WriteTimeout: 5 * time.Second,
 	}
 	return nil
+}
+
+func (hs *HttpServer) initHandler() *httprouter.Router {
+	router := httprouter.New()
+	router.GET("/", Index)
+	router.GET("/close", Close)
+	router.POST("/job/create", Create)
+
+	return router
 }
 
 func (hs *HttpServer) Start() error {
@@ -85,6 +94,11 @@ func (hs *HttpServer) Start() error {
 	return err
 }
 
+func (hs *HttpServer) Stop() error {
+	logrus.Infof("HttpServer.Stop pid:%d ...", os.Getpid())
+	return hs.Server.Shutdown(context.Background())
+}
+
 func Index(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	logrus.Infof("Index .....req:%+v", r)
 	w.Write([]byte("OK\r\n"))
@@ -95,5 +109,66 @@ func Close(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	logrus.Infof("Close .....req:%+v", r)
 	time.Sleep(2 * time.Second)
 	r.Close = true
+	return
+}
+
+func Create(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	fun := "HttpServer.Create -->"
+	logrus.Infof("%s .....req:%+v", fun, r)
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		logrus.Errorf("%s req:%+v err:%v", fun, r, err)
+		return
+	}
+
+	j := &Job{}
+	err = json.Unmarshal(reqBody, j)
+	if err != nil {
+		logrus.Errorf("%s reqBody:%s err:%v", fun, reqBody, err)
+		return
+	}
+
+	logrus.Infof("%s reqBody:%s job:%s err:%v", fun, reqBody, j, err)
+
+	ctx := context.Background()
+	ret, err := GJobMgr.Put(ctx, GetJobCreateKey(j.Name), string(reqBody))
+	if err != nil {
+		logrus.Errorf("%s PUT reqBody:%s err:%v", fun, reqBody, err)
+		return
+	}
+
+	logrus.Infof("%s reqBody:%s resp:%s err:%v", fun, reqBody, ret, err)
+	return
+}
+
+func Delete(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	fun := "HttpServer.Create -->"
+	logrus.Infof("%s .....req:%+v", fun, r)
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		logrus.Errorf("%s req:%+v err:%v", fun, r, err)
+		return
+	}
+
+	type DeleteJob struct {
+		Name string
+	}
+	dj := &DeleteJob{}
+	err = json.Unmarshal(reqBody, dj)
+	if err != nil {
+		logrus.Errorf("%s reqBody:%s err:%v", fun, reqBody, err)
+		return
+	}
+
+	logrus.Infof("%s reqBody:%s job:%s err:%v", fun, reqBody, dj, err)
+
+	ctx := context.Background()
+	ret, err := GJobMgr.Put(ctx, GetJobCreateKey(dj.Name), string(reqBody))
+	if err != nil {
+		logrus.Errorf("%s PUT reqBody:%s err:%v", fun, reqBody, err)
+		return
+	}
+
+	logrus.Infof("%s reqBody:%s resp:%s err:%v", fun, reqBody, ret, err)
 	return
 }

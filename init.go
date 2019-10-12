@@ -54,3 +54,7 @@ func initWatcher() error {
 	}
 	return e2
 }
+
+func stopServer() {
+	GetHttpInstance().Stop()
+}
