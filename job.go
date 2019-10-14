@@ -98,7 +98,7 @@ func (jm *JobMgr) Put(ctx context.Context, key, value string) (string, error) {
 	}
 
 	// TODO 老数据处理
-	b, err := json.Marshal(res.PrevKv)
+	b, err := json.Marshal(res)
 	if err != nil {
 		logrus.Errorf("%s client put key:%s err:%v", fun, key, err)
 		return "", err
@@ -110,12 +110,34 @@ func (jm *JobMgr) Put(ctx context.Context, key, value string) (string, error) {
 }
 
 func (jm *JobMgr) Delete(ctx context.Context, key string) (string, error) {
+	fun := "JobMgr.Delete -->"
+	rs := ""
 
-	return "", nil
+	// 先KillJob
+
+	res, err := jm.client.Delete(ctx, key, clientv3.WithPrevKV())
+	if err != nil {
+		logrus.Errorf("%s client delete key:%s err:%v", fun, key, err)
+		return "", err
+	}
+
+	if res.PrevKvs == nil {
+		return "", nil
+	}
+
+	b, err := json.Marshal(res)
+	if err != nil {
+		logrus.Errorf("%s client put key:%s err:%v", fun, key, err)
+		return "", err
+	}
+
+	rs = string(b)
+
+	return rs, nil
 }
 
 func (jm *JobMgr) Watch(ctx context.Context, key string) chan *JobEvent {
-	ch := make(chan *JobEvent, 1024)
+	ch := make(chan *JobEvent, DefaultJobEventCount)
 
 	go jm.watch(ctx, key, ch)
 	return ch

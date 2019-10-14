@@ -11,3 +11,9 @@ const (
 	JOB_PREFIX_KILL = "/jobs/kill/"
 	JOB_PREFIX_LOCK = "/jobs/lock/"
 )
+
+const (
+	DefaultJobEventCount  = 1024
+	DefaultSchedulerCount = 1024
+	DefaultExecutorCount  = 1024
+)

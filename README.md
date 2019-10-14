@@ -100,3 +100,8 @@ https://www.shkuro.com/books/2019-mastering-distributed-tracing/
 ```
 http://blog.coderhuo.tech/2017/10/12/Virtual_Memory_C_strings_proc/
 ```
+
+任务调度开源项目
+```
+https://github.com/joyent/containerpilot.git
+```

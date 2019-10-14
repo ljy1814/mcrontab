@@ -157,7 +157,7 @@ var (
 
 func InitScheduler() (err error) {
 	GScheduler = &Scheduler{
-		jobEventChan: make(chan *JobEvent, 1024),
+		jobEventChan: make(chan *JobEvent, DefaultSchedulerCount),
 		// job执行计划表
 		jobEventPlanMap: make(map[string]*SchedulePlan),
 		// 正在执行的job表

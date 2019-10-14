@@ -41,7 +41,7 @@ func initJobMgr() {
 
 func initExecutor() {
 	GExecutor = &Executor{
-		ScheduleResultChan: make(chan *ExecResult, 1024),
+		ScheduleResultChan: make(chan *ExecResult, DefaultExecutorCount),
 	}
 }
 

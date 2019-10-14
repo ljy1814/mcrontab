@@ -62,6 +62,7 @@ func (hs *HttpServer) initHandler() *httprouter.Router {
 	router.GET("/", Index)
 	router.GET("/close", Close)
 	router.POST("/job/create", Create)
+	router.POST("/job/delete", Delete)
 
 	return router
 }
@@ -142,7 +143,7 @@ func Create(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 }
 
 func Delete(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	fun := "HttpServer.Create -->"
+	fun := "HttpServer.Delete -->"
 	logrus.Infof("%s .....req:%+v", fun, r)
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -163,7 +164,7 @@ func Delete(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	logrus.Infof("%s reqBody:%s job:%s err:%v", fun, reqBody, dj, err)
 
 	ctx := context.Background()
-	ret, err := GJobMgr.Put(ctx, GetJobCreateKey(dj.Name), string(reqBody))
+	ret, err := GJobMgr.Delete(ctx, GetJobCreateKey(dj.Name))
 	if err != nil {
 		logrus.Errorf("%s PUT reqBody:%s err:%v", fun, reqBody, err)
 		return
