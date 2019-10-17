@@ -28,7 +28,7 @@ func (s *Scheduler) scheduleLoop() {
 	for {
 		select {
 		case v := <-s.jobEventChan:
-			logrus.Info(v)
+			logrus.Infof("Scheduler.scheduleLoop -->%s", v)
 			// 任务更新
 			s.handle(context.Background(), v)
 		case <-schedulerTimer.C:
@@ -66,12 +66,15 @@ func (s *Scheduler) trySchedule() (timeAfter time.Duration) {
 }
 
 func (s *Scheduler) Push(je *JobEvent) {
+	logrus.Infof("Scheduler.Push count:%d job:%s", len(s.jobEventChan), je)
 	s.jobEventChan <- je
 }
 
 func (s *Scheduler) tryStartJob(plan *SchedulePlan) {
 	fun := "Scheduler.tryStartJob -->"
 
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	// 任务还在执行则跳过本次调度
 	if _, ok := s.jobExecMap[plan.Job.Name]; ok {
 		logrus.Warnf("%s job:%s executeing", fun, plan.Job)
@@ -80,7 +83,12 @@ func (s *Scheduler) tryStartJob(plan *SchedulePlan) {
 
 	// 加入执行表
 	s.jobExecMap[plan.Job.Name] = plan
-	GExecutor.ExecJob(plan)
+	for _, j := range s.jobExecMap {
+		logrus.Infof("%s DEBUG exec map plan:%s", fun, j)
+	}
+
+	// 队列
+	go GExecutor.ExecJob(plan)
 }
 
 func (s *Scheduler) handle(ctx context.Context, je *JobEvent) {
@@ -102,9 +110,19 @@ func (s *Scheduler) handle(ctx context.Context, je *JobEvent) {
 
 	case JOB_EVENT_DELETE:
 		logrus.Infof("%s DELETE job:%s", fun, je)
-		if _, ok := s.jobEventPlanMap[je.Job.Name]; ok {
+		jobSchedulePlan, ok := s.jobExecMap[je.Job.Name]
+		logrus.Infof("%s DELETE plan:%s ok:%v", fun, jobSchedulePlan, ok)
+		if ok {
+			logrus.Infof("%s DELETE KILL job:%s", fun, je)
+			jobSchedulePlan.cancelFunc()
+			delete(s.jobExecMap, je.Job.Name)
+		}
+
+		t, ok := s.jobEventPlanMap[je.Job.Name]
+		if ok {
 			delete(s.jobEventPlanMap, je.Job.Name)
 		}
+		logrus.Infof("%s DELETE plan:%s ok:%v", fun, t, ok)
 
 	case JOB_EVENT_KILL:
 		jobSchedulePlan, ok := s.jobExecMap[je.Job.Name]

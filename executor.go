@@ -49,6 +49,8 @@ func (e *Executor) execJob(plan *SchedulePlan) error {
 
 	ctx := context.Background()
 	err := jobLock.TryLock(ctx, GetJobLockKey(plan.Job.Name))
+
+	// 执行完释放锁
 	defer jobLock.UnLock(ctx)
 
 	now := time.Now()

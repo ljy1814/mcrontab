@@ -1,6 +1,8 @@
 package main
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	TimeFormat = "20060102 15:04:05"
@@ -20,4 +22,18 @@ func GetJobLockKey(name string) string {
 
 func GetJobCreateKey(name string) string {
 	return JOB_PREFIX_PUT + name
+}
+
+func ExtractCreateJobName(key string) string {
+	if len(key) <= len(JOB_PREFIX_PUT) {
+		return key
+	}
+	return key[len(JOB_PREFIX_PUT):]
+}
+
+func ExtractKillJobName(key string) string {
+	if len(key) <= len(JOB_PREFIX_KILL) {
+		return key
+	}
+	return key[len(JOB_PREFIX_KILL):]
 }

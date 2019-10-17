@@ -284,7 +284,14 @@ func (jm *JobMgr) WatchJobs(ctx context.Context, key string) error {
 					}
 					go GScheduler.Push(je)
 				case mvccpb.DELETE:
-					logrus.Infof("%s DELETE key:%s value:%s", fun, key, res.Kv.Key)
+					logrus.Infof("%s DELETE prefix:%s key:%s value:%s", fun, key, res.Kv.Key, res.Kv.Value)
+					je := &JobEvent{
+						Type: JOB_EVENT_DELETE,
+						Job: &Job{
+							Name: ExtractCreateJobName(string(res.Kv.Key)),
+						},
+					}
+					go GScheduler.Push(je)
 				}
 			}
 		}
