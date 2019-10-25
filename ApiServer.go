@@ -63,6 +63,7 @@ func (hs *HttpServer) initHandler() *httprouter.Router {
 	router.GET("/close", Close)
 	router.POST("/job/create", Create)
 	router.POST("/job/delete", Delete)
+	router.POST("/job/kill", Kill)
 
 	return router
 }
@@ -166,7 +167,39 @@ func Delete(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	ctx := context.Background()
 	ret, err := GJobMgr.Delete(ctx, GetJobCreateKey(dj.Name))
 	if err != nil {
-		logrus.Errorf("%s PUT reqBody:%s err:%v", fun, reqBody, err)
+		logrus.Errorf("%s Delete reqBody:%s err:%v", fun, reqBody, err)
+		return
+	}
+
+	logrus.Infof("%s reqBody:%s resp:%s err:%v", fun, reqBody, ret, err)
+	return
+}
+
+func Kill(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	fun := "HttpServer.Kill -->"
+	logrus.Infof("%s .....req:%+v", fun, r)
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		logrus.Errorf("%s req:%+v err:%v", fun, r, err)
+		return
+	}
+
+	type KillJob struct {
+		Name string
+	}
+	dj := &KillJob{}
+	err = json.Unmarshal(reqBody, dj)
+	if err != nil {
+		logrus.Errorf("%s reqBody:%s err:%v", fun, reqBody, err)
+		return
+	}
+
+	logrus.Infof("%s reqBody:%s job:%s err:%v", fun, reqBody, dj, err)
+
+	ctx := context.Background()
+	ret, err := GJobMgr.Put(ctx, GetJobCreateKey(dj.Name), string(reqBody))
+	if err != nil {
+		logrus.Errorf("%s Put reqBody:%s err:%v", fun, reqBody, err)
 		return
 	}
 

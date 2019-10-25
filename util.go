@@ -1,6 +1,8 @@
 package main
 
 import (
+	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -24,6 +26,10 @@ func GetJobCreateKey(name string) string {
 	return JOB_PREFIX_PUT + name
 }
 
+func GetJobKillKey(name string) string {
+	return JOB_PREFIX_KILL + name
+}
+
 func ExtractCreateJobName(key string) string {
 	if len(key) <= len(JOB_PREFIX_PUT) {
 		return key
@@ -36,4 +42,18 @@ func ExtractKillJobName(key string) string {
 		return key
 	}
 	return key[len(JOB_PREFIX_KILL):]
+}
+
+func funcName(skip int) (name string) {
+	if _, file, lineNo, ok := runtime.Caller(skip); ok {
+		return file + ":" + strconv.Itoa(lineNo)
+	}
+
+	return "unknown:0"
+}
+
+func errIncr(lv Level, source string) {
+	if lv == _errorLevel {
+		// 统计
+	}
 }

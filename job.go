@@ -302,7 +302,7 @@ func (jm *JobMgr) WatchJobs(ctx context.Context, key string) error {
 
 func (jm *JobMgr) WatchKillJobs(ctx context.Context, key string) error {
 	fun := "JobMgr.WatchKillJobs -->"
-	_, err := jm.initJobsByType(ctx, key, JOB_EVENT_DELETE)
+	_, err := jm.initJobsByType(ctx, key, JOB_EVENT_KILL)
 	if err != nil {
 		return err
 	}
