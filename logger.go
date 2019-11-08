@@ -3,10 +3,49 @@ package main
 import (
 	"context"
 	"time"
+
+	pkgerr "github.com/pkg/errors"
 )
 
-func InitLogger() {
+type Config struct {
+	Family         string
+	Host           string
+	Stdout         bool
+	Dir            string
+	FileBufferSize int64
+	MaxLogFile     int
+	RotateSize     int64
+	V              int32
+	Module         map[string]int32
+	Filter         []string
+}
 
+var (
+	_stdout   bool
+	_v        int
+	_dir      string
+	_agentDSN string
+)
+
+func InitLogger(conf *Config) {
+	var isNil bool
+	if conf == nil {
+		isNil = true
+		conf = &Config{
+			Stdout: _stdout,
+			Dir:    _dir,
+			V:      int32(_v),
+		}
+	}
+
+	if isNil {
+
+	}
+
+	//var hs []Handler
+	//if conf.Stdout {
+	//	hs = append(hs, NewStdout())
+	//}
 }
 
 const (
@@ -97,6 +136,8 @@ func KVInt64(k string, v int64) D {
 
 type Handler interface {
 	Log(context.Context, Level, ...D)
+	Close() error
+	SetFormat(string)
 }
 
 const (
@@ -133,5 +174,21 @@ func (hs Handlers) Log(ctx context.Context, lv Level, d ...D) {
 
 	for _, h := range hs.handlers {
 		h.Log(ctx, lv, d...)
+	}
+}
+
+func (hs Handlers) Close() (err error) {
+	for _, h := range hs.handlers {
+		if e := h.Close(); e != nil {
+			err = pkgerr.WithStack(e)
+		}
+	}
+
+	return
+}
+
+func (hs Handlers) SetFormat(f string) {
+	for _, h := range hs.handlers {
+		h.SetFormat(f)
 	}
 }
