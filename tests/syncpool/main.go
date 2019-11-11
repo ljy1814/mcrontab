@@ -19,7 +19,6 @@ func handle0(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, "pull request id:%d\n", *data.PullRequest.ID)
-	//logrus.Infof("req:%+v", r)
 }
 
 var (
@@ -98,5 +97,9 @@ func handle(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/", handle)
+	http.HandleFunc("/0", handle0)
+	http.HandleFunc("/1", handle1)
+	http.HandleFunc("/2", handle2)
+	http.HandleFunc("/3", handle3)
 	logrus.Fatal(http.ListenAndServe(":8080", nil))
 }
