@@ -8,6 +8,35 @@ import (
 	"testing"
 )
 
+func TestHandle(t *testing.T) {
+	pl, err := ioutil.ReadFile("testdata/payload.json")
+	if err != nil {
+		t.Fatalf("could not read payload.json: %v", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:8080", bytes.NewReader(pl))
+	if err != nil {
+		t.Fatalf("could not create test request: %v", err)
+	}
+	rec := httptest.NewRecorder()
+	handle(rec, req)
+	res := rec.Result()
+
+	if res.StatusCode != http.StatusOK {
+		t.Errorf("unexpected status code %s", res.Status)
+	}
+	defer res.Body.Close()
+
+	msg, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatalf("could not read result payload: %v", err)
+	}
+
+	if exp := "pull request id:191568743\n"; string(msg) != exp {
+		t.Fatalf("expected message %q; got %q", exp, msg)
+	}
+}
+
 func BenchmarkHandle(b *testing.B) {
 	b.StopTimer()
 
@@ -16,6 +45,7 @@ func BenchmarkHandle(b *testing.B) {
 	if err != nil {
 		b.Fatalf("could not read payload.json err:%v", err)
 	}
+	//logrus.Infof("TEST payload:%s \n%d", pl, b.N)
 
 	uu := "http://127.0.0.1:8080"
 	for i := 0; i < b.N; i++ {
@@ -26,8 +56,9 @@ func BenchmarkHandle(b *testing.B) {
 
 		// logrus.Infof("req:%+v", req)
 		rec := httptest.NewRecorder()
+		b.StartTimer()
 		handle(rec, req)
-		//logrus.Infof("req:%+v", req)
+		//logrus.Infof("req:%d", i)
 		b.StopTimer()
 	}
 }
