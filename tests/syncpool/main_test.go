@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestHandle(t *testing.T) {
+func TestTHandle(t *testing.T) {
 	pl, err := ioutil.ReadFile("testdata/payload.json")
 	if err != nil {
 		t.Fatalf("could not read payload.json: %v", err)
@@ -32,7 +32,7 @@ func TestHandle(t *testing.T) {
 		t.Fatalf("could not read result payload: %v", err)
 	}
 
-	if exp := "pull request id:191568743\n"; string(msg) != exp {
+	if exp := "handle pull request id:191568743\n"; string(msg) != exp {
 		t.Fatalf("expected message %q; got %q", exp, msg)
 	}
 }
