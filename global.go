@@ -19,3 +19,7 @@ var (
 	//GEtcdCluster []string = []string{"http://127.0.0.1:2041", "http://127.0.0.1:2051", "http://127.0.0.1:2061"}
 	GEtcdCluster []string = []string{"http://127.0.0.1:4001", "http://127.0.0.1:5001", "http://127.0.0.1:6001"}
 )
+
+var (
+	GLogger *FileHandler
+)

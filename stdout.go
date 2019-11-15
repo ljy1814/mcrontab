@@ -1,5 +1,11 @@
 package main
 
+import (
+	"context"
+	"fmt"
+	"os"
+)
+
 var (
 	_defaultStdout = NewStdout()
 	defaultPattern = "%L %d-%T %f %M"
@@ -15,11 +21,15 @@ func NewStdout() *StdoutHandler {
 	}
 }
 
-func (h *StdoutHandler) Log() {
-
+func (h *StdoutHandler) Log(ctx context.Context, lv Level, args ...interface{}) {
+	// handle data
+	//d[_time] = time.Now().Format(_timeFormat)
+	//h.render.Render(os.Stderr, args)
+	fmt.Fprint(os.Stderr, args)
+	os.Stderr.Write([]byte("\n"))
 }
 
-func (h *StdoutHandler) Close() {
+func (h *StdoutHandler) Close() error {
 	return nil
 }
 

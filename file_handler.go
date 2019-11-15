@@ -1,6 +1,13 @@
 package main
 
-import "path/filepath"
+import (
+	"context"
+	"fmt"
+	"io"
+	"path/filepath"
+
+	"github.com/Sirupsen/logrus"
+)
 
 const (
 	_infoIdx = iota
@@ -10,7 +17,11 @@ const (
 )
 
 var (
-	_fileNames = map[int]string{}
+	_fileNames = map[int]string{
+		_infoIdx:  "info.log",
+		_warnIdx:  "warn.log",
+		_errorIdx: "error.log",
+	}
 )
 
 type FileHandler struct {
@@ -37,7 +48,7 @@ func NewFile(dir string, buffersize, rotateSize int64, maxLogFile int) *FileHand
 	}
 
 	handler := &FileHandler{
-		render: newPatternRender("[%D %T] [%L] [%S] %M"),
+		//render: newPatternRender("[%D %T] [%L] [%S] %M"),
 	}
 
 	for idx, name := range _fileNames {
@@ -45,4 +56,32 @@ func NewFile(dir string, buffersize, rotateSize int64, maxLogFile int) *FileHand
 	}
 
 	return handler
+}
+
+func (fh *FileHandler) Close() error {
+	return nil
+}
+
+func (fh *FileHandler) SetFormat(string) {
+
+}
+
+func (h *FileHandler) Log(ctx context.Context, lv Level, args ...interface{}) {
+	var w io.Writer
+
+	switch lv {
+	case _warnLevel:
+		w = h.fws[_warnIdx]
+	case _errorLevel:
+		w = h.fws[_errorIdx]
+	default:
+		w = h.fws[_infoIdx]
+	}
+
+	bs := []byte(fmt.Sprint(args))
+
+	logrus.Infof("************FileHandler[fws:%d] data:%s", len(h.fws), bs)
+
+	w.Write(bs)
+	return
 }

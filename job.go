@@ -269,6 +269,7 @@ func (jm *JobMgr) WatchJobs(ctx context.Context, key string) error {
 		for resp := range watchChan {
 			for _, res := range resp.Events {
 				logrus.Infof("%s Event res:%+v", fun, res)
+				GLogger.Log(ctx, _infoLevel, "%s Event res:%+v", fun, res)
 				switch res.Type {
 				case mvccpb.PUT:
 					job := &Job{}

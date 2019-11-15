@@ -32,7 +32,7 @@ var (
 	}
 )
 
-func newPatternRender(format string) {
+func newPatternRender(format string) *pattern {
 	p := &pattern{
 		bufPool: sync.Pool{
 			New: func() interface{} {
@@ -91,7 +91,7 @@ func (p *pattern) RenderString(d map[string]interface{}) string {
 		p.bufPool.Put(buf)
 	}()
 
-	for _, buf := range p.funcs {
+	for _, f := range p.funcs {
 		buf.WriteString(f(d))
 	}
 

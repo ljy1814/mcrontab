@@ -43,9 +43,13 @@ func InitLogger(conf *Config) {
 	}
 
 	//var hs []Handler
-	//if conf.Stdout {
-	//	hs = append(hs, NewStdout())
-	//}
+	if conf.Stdout {
+		//hs = append(hs, NewStdout())
+	}
+
+	if conf.Dir != "" {
+		//hs = append(hs, NewFile(conf.Dir, conf.FileBufferSize, conf.RotateSize, conf.MaxLogFile))
+	}
 }
 
 const (
@@ -136,6 +140,7 @@ func KVInt64(k string, v int64) D {
 
 type Handler interface {
 	Log(context.Context, Level, ...D)
+	//Log(context.Context, Level, ...interface{})
 	Close() error
 	SetFormat(string)
 }
@@ -145,6 +150,11 @@ const (
 	_level      = "level"
 	_time       = "time"
 	_levelValue = "level_value"
+	_instanceID = "instance_id"
+	_deplyEnv   = "env"
+	_zone       = "zone"
+	_appID      = "app_id"
+	_log        = "log"
 )
 
 type Handlers struct {

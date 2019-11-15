@@ -58,3 +58,13 @@ func initWatcher() error {
 func stopServer() {
 	GetHttpInstance().Stop()
 }
+
+func initLogger() {
+	var (
+		dir              = "./logs"
+		buffersize int64 = 1024
+		rotateSize int64 = 1024
+		maxLogFile int   = 5
+	)
+	GLogger = NewDemoFile(dir, buffersize, rotateSize, maxLogFile)
+}

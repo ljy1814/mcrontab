@@ -14,6 +14,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/Sirupsen/logrus"
 )
 
 // 日志写入器,代理写入器
@@ -24,6 +26,7 @@ type wrapFile struct {
 
 // 日志写入
 func (w *wrapFile) write(p []byte) (n int, err error) {
+	logrus.Infof("wrapFile:%s", p)
 	n, err = w.fp.Write(p)
 	w.fsize += int64(n)
 
@@ -220,6 +223,7 @@ func (f *FileWriter) checkRotate(t time.Time) {
 		if err = f.current.fp.Close(); err != nil {
 			f.stdlog.Printf("close current file error:%s", err)
 		}
+		logrus.Errorf("close current file error:%v", err)
 
 		fname := formatFname(f.lastRotateFormat, f.lastSplitNum)
 		oldpath := filepath.Join(f.dir, f.fname)
@@ -257,7 +261,7 @@ type rotateItem struct {
 type Option func(opt *option)
 
 var (
-	RotateDaily   = "2006-01-02"
+	RotateDaily   = "2006-01-02-15"
 	defaultOption = option{
 		RotateFormat:   RotateDaily,
 		MaxSize:        1 << 30,

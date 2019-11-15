@@ -1,2 +1,4 @@
 master
 mcrontab
+*.swp
+logs
