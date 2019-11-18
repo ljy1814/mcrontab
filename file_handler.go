@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-
-	"github.com/Sirupsen/logrus"
 )
 
 const (
@@ -67,6 +65,7 @@ func (fh *FileHandler) SetFormat(string) {
 }
 
 func (h *FileHandler) Log(ctx context.Context, lv Level, args ...interface{}) {
+
 	var w io.Writer
 
 	switch lv {
@@ -80,8 +79,17 @@ func (h *FileHandler) Log(ctx context.Context, lv Level, args ...interface{}) {
 
 	bs := []byte(fmt.Sprint(args))
 
-	logrus.Infof("************FileHandler[fws:%d] data:%s", len(h.fws), bs)
+	//logrus.Infof("************FileHandler[fws:%d] data:%s", len(h.fws), bs)
 
 	w.Write(bs)
+	return
+}
+
+func (h *FileHandler) Write(p []byte) (n int, err error) {
+	var w io.Writer
+
+	w = h.fws[_infoIdx]
+
+	w.Write(p)
 	return
 }

@@ -63,8 +63,11 @@ func initLogger() {
 	var (
 		dir              = "./logs"
 		buffersize int64 = 1024
-		rotateSize int64 = 1024
+		rotateSize int64 = 128 * 1024 * 1024
 		maxLogFile int   = 5
 	)
 	GLogger = NewDemoFile(dir, buffersize, rotateSize, maxLogFile)
+
+	//logrus.AddHook(logrusHook{})
+	logrus.SetOutput(GLogger)
 }

@@ -105,3 +105,9 @@ http://blog.coderhuo.tech/2017/10/12/Virtual_Memory_C_strings_proc/
 ```
 https://github.com/joyent/containerpilot.git
 ```
+
+logrus
+```
+AddHook 对特定的日志加某种操作,不改变日志输出
+SetOutput 设置输出目的地
+```
